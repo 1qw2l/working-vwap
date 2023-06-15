@@ -1,0 +1,53 @@
+study("Asimsy VWAP", overlay=true)
+timeframe = input('M', title="Timeframe")
+
+devUp1 = input(2, title="stdev above (1)")
+devDn1 = input(2, title="stdev below (1)")
+
+devUp2 = input(3, title="Stdev above (1.5)")
+devDn2 = input(3, title="Stdev below (1.5)")
+
+devUp3 = input(4, title="Stdev above (2)")
+devDn3 = input(4, title="Stdev below (2)")
+
+devUp4 = input(5, title="Stdev above (2.5)")
+devDn4 = input(5, title="Stdev below (2.5)")
+
+showDv2 = input(true, type=bool, title="Show second group of bands?")
+showDv3 = input(true, type=bool, title="Show third group of bands?")
+showDv4 = input(true, type=bool, title="Show fourth group of bands?")
+
+showPrevVWAP = input(false, type=bool, title="Show previous VWAP close")
+
+start = security(tickerid, timeframe, time)
+
+newSession = iff(change(start), 1, 0)
+
+vwapsum = iff(newSession, hl2*volume, vwapsum[1]+hl2*volume)
+volumesum = iff(newSession, volume, volumesum[1]+volume)
+v2sum = iff(newSession, volume*hl2*hl2, v2sum[1]+volume*hl2*hl2)
+myvwap = vwapsum/volumesum
+dev = sqrt(max(v2sum/volumesum - myvwap*myvwap, 0))
+
+plot(myvwap, title="VWAP", style=circles, color=white)
+plot(myvwap + devUp1 * dev, title="VWAP Upper", style=circles, color=red)
+plot(myvwap - devDn1 * dev, title="VWAP Lower", style=circles, color=green)
+
+U1=plot(showDv2 ? myvwap + devUp2 * dev : na, title="Vwap Upper (0.5)", style=circles, color=red)
+D1=plot(showDv2 ? myvwap - devDn2 * dev : na, title="Vwap Lower (0.5)", style=circles, color=green)
+
+U2=plot(showDv3 ? myvwap + devUp3 * dev : na, title="VWAP Upper (1)", style=circles, color=red)
+D2=plot(showDv3 ? myvwap - devDn3 * dev : na, title="VWAP Lower (1)", style=circles, color=green)
+
+U3=plot(showDv4 ? myvwap + devUp4 * dev : na, title="VWAP Upper (1,5)", style=circles, color=red)
+D3=plot(showDv4 ? myvwap - devDn4 * dev : na, title="VWAP Lower (1.5)", style=circles, color=green)
+
+fill(U1, U2, color=red, transp=90, title="Over Bought Fill 1")
+fill(D1, D2, color=green, transp=90, title="Over Sold Fill 1")
+fill(U2, U3, color=red, transp=90, title="Over Bought Fill 2")
+fill(D2, D3, color=green, transp=90, title="Over Sold Fill 2")
+
+
+
+prevwap = iff(newSession, myvwap[1], prevwap[1])
+plot(showPrevVWAP ? prevwap : na, style=circles, color=close > prevwap ? white : red)
